@@ -24,3 +24,12 @@ export interface Strategy {
   trending?: boolean;
   isNew?: boolean;
 }
+
+export interface Notification {
+  id: string;
+  type: 'alert' | 'news' | 'strategy';
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+}

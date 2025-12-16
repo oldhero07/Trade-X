@@ -27,3 +27,15 @@ export const getPortfolioInsight = async (totalValue: number): Promise<string> =
         return "Diversification suggested to mitigate sector-specific risks.";
     }
 }
+
+export const analyzeStock = async (symbol: string): Promise<string> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Give a one-sentence technical analysis summary for ${symbol}. Is it a Buy, Hold, or Sell based on recent momentum?`,
+        });
+        return response.text || `${symbol} shows strong momentum. Analysts suggest a HOLD rating due to recent volatility.`;
+    } catch (error) {
+        return "Analysis unavailable at this time.";
+    }
+}
