@@ -5,6 +5,8 @@ interface LayoutProps {
   activePage: Page;
   setActivePage: (page: Page) => void;
   children: React.ReactNode;
+  user?: any;
+  onLogout?: () => void;
 }
 
 const NavItem = ({ 
@@ -37,7 +39,7 @@ const NavItem = ({
   </button>
 );
 
-export const Layout: React.FC<LayoutProps> = ({ activePage, setActivePage, children }) => {
+export const Layout: React.FC<LayoutProps> = ({ activePage, setActivePage, children, user, onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -226,16 +228,26 @@ export const Layout: React.FC<LayoutProps> = ({ activePage, setActivePage, child
           <div className="flex flex-col gap-2">
             <NavItem page="settings" icon="settings" label="Settings" active={activePage === 'settings'} onClick={setActivePage} />
             
-            <div className="flex items-center gap-3 px-4 py-3 mt-4 border-t border-border-dark pt-6 cursor-pointer hover:bg-white/5 rounded-xl transition-colors">
+            <div className="flex items-center gap-3 px-4 py-3 mt-4 border-t border-border-dark pt-6">
               <div 
-                className="size-10 rounded-full bg-cover bg-center" 
-                data-alt="User profile picture showing a smiling professional"
-                style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAgATd7_k3R6lguI15n82_S8CYk5edFTTG-MrxXAtIzJI4AV_KOak5lUjAemUFBEHoPJWjVJB17regkNuXpBakRfAyx6yvMeoAAuiWp4sV8cbWpKfaiQyysBzbKoR9ycXY_DoDlklOBoPo3W-9aWNPAw57eyyZv6Jsfx4nhgHA271vTeUsYMuQ11Dna0vQQlpVzUJIuVpos7Qb49gUXZoQcpghJO9mSIkfPTMHHmyQp9AcUoZFeeHaunUYt4-jJd8wRYRnvRnjb41v_")' }}
-              ></div>
-              <div className="flex flex-col">
-                <p className="text-sm font-bold text-white">Alex Morgan</p>
+                className="size-10 rounded-full bg-cover bg-center bg-primary flex items-center justify-center text-black font-bold" 
+                data-alt="User profile picture"
+              >
+                {user?.name?.charAt(0) || 'U'}
+              </div>
+              <div className="flex flex-col flex-1">
+                <p className="text-sm font-bold text-white">{user?.name || 'User'}</p>
                 <p className="text-xs text-text-secondary">Pro Plan</p>
               </div>
+              {onLogout && (
+                <button 
+                  onClick={onLogout}
+                  className="p-1 text-text-secondary hover:text-white transition-colors"
+                  title="Logout"
+                >
+                  <span className="material-symbols-outlined text-[20px]">logout</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
+import Auth from './components/Auth';
 import { Page, Stock, Strategy } from './types';
 import { getMarketSummary, getPortfolioInsight, analyzeStock } from './services/geminiService';
 import { 
@@ -1556,6 +1557,42 @@ const StrategyBuilder = ({ setActivePage }: { setActivePage: (p: Page) => void }
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('dashboard');
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check for existing auth token on app load
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // In a real app, you'd validate the token with the backend
+      // For now, we'll assume it's valid and set a mock user
+      setUser({ name: 'Alex', email: 'alex@example.com' });
+    }
+    setIsLoading(false);
+  }, []);
+
+  const handleLogin = (userData: any) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    setUser(null);
+    setActivePage('dashboard');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background-dark flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show auth screen if not logged in
+  if (!user) {
+    return <Auth onLogin={handleLogin} />;
+  }
 
   const renderPage = () => {
     switch (activePage) {
@@ -1571,7 +1608,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout activePage={activePage} setActivePage={setActivePage}>
+    <Layout activePage={activePage} setActivePage={setActivePage} user={user} onLogout={handleLogout}>
       {renderPage()}
     </Layout>
   );
