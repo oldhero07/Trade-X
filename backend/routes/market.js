@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const pool = require('../config/database');
 const marketDataService = require('../services/marketDataService');
+const priceCache = require('../services/priceCache');
 
 const router = express.Router();
 
@@ -38,75 +39,117 @@ router.get('/news', async (req, res) => {
   }
 });
 
-// Get current price for a ticker (supports both Indian and US stocks)
+// Search stocks
+router.get('/search/:query', async (req, res) => {
+  try {
+    const { query } = req.params;
+    const results = await marketDataService.searchStocks(query);
+    res.json(results);
+  } catch (error) {
+    console.error('Stock search error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get cache status
+router.get('/cache/status', async (req, res) => {
+  try {
+    const status = priceCache.getStatus();
+    
+    // Get cache statistics
+    const cacheStats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_cached,
+        COUNT(CASE WHEN last_updated > NOW() - INTERVAL '10 minutes' THEN 1 END) as fresh_data,
+        MAX(last_updated) as latest_update,
+        MIN(last_updated) as oldest_update
+      FROM market_data_cache
+    `);
+    
+    res.json({
+      ...status,
+      statistics: cacheStats.rows[0]
+    });
+  } catch (error) {
+    console.error('Cache status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Force cache update for specific ticker
+router.post('/cache/update/:ticker', async (req, res) => {
+  try {
+    const { ticker } = req.params;
+    const updatedPrice = await priceCache.forceUpdate(ticker);
+    
+    res.json({
+      message: `Cache updated for ${ticker}`,
+      data: updatedPrice
+    });
+  } catch (error) {
+    console.error('Cache update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get current price for a ticker (cached)
 router.get('/price/:ticker', async (req, res) => {
   try {
     const { ticker } = req.params;
+    const { force } = req.query;
 
-    // Check cache first
-    const cachedData = await pool.query(
-      'SELECT * FROM market_data_cache WHERE ticker = $1 AND last_updated > NOW() - INTERVAL \'5 minutes\'',
-      [ticker.toUpperCase()]
-    );
-
-    if (cachedData.rows.length > 0) {
-      return res.json(cachedData.rows[0]);
-    }
-
-    // Determine if it's an Indian stock
-    const indianStocks = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN', 'LT', 'HCLTECH'];
-    let quote;
+    // Try to get from cache first
+    let cachedPrice = await priceCache.getCachedPrice(ticker);
     
-    if (indianStocks.includes(ticker.toUpperCase())) {
-      quote = await marketDataService.getIndianQuote(ticker.toUpperCase());
-    } else {
-      quote = await marketDataService.getQuote(ticker.toUpperCase());
+    // If no cache or force refresh requested, update it
+    if (!cachedPrice || force === 'true') {
+      cachedPrice = await priceCache.forceUpdate(ticker);
     }
-
-    // Update cache
-    await pool.query(
-      `INSERT INTO market_data_cache (ticker, current_price, change_percent, volume, last_updated) 
-       VALUES ($1, $2, $3, $4, $5) 
-       ON CONFLICT (ticker) DO UPDATE SET 
-       current_price = $2, change_percent = $3, volume = $4, last_updated = $5`,
-      [quote.symbol, quote.price, quote.changePercent, quote.volume, quote.lastUpdated]
-    );
-
-    res.json({
-      ticker: quote.symbol,
-      current_price: quote.price,
-      change_percent: quote.changePercent,
-      volume: quote.volume,
-      last_updated: quote.lastUpdated
-    });
+    
+    if (cachedPrice) {
+      res.json({
+        ticker: cachedPrice.ticker,
+        current_price: cachedPrice.price,
+        change_percent: cachedPrice.changePercent,
+        volume: cachedPrice.volume,
+        last_updated: cachedPrice.lastUpdated,
+        cached: cachedPrice.cached,
+        age_minutes: cachedPrice.ageMinutes
+      });
+    } else {
+      res.status(404).json({ error: 'Price data not available' });
+    }
   } catch (error) {
     console.error('Price fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Get market overview (Indian indices + Global)
+// Get market overview (cached)
 router.get('/overview', async (req, res) => {
   try {
-    // Get Indian indices
-    const indianIndices = await marketDataService.getIndianIndices();
+    // Get cached prices for major indices
+    const majorTickers = ['SPY', 'QQQ', 'GLD', 'BTC-USD'];
+    const cachedPrices = await priceCache.getCachedPrices(majorTickers);
     
-    // Get global indices
-    const globalQuotes = await marketDataService.getMultipleQuotes(['SPY', 'QQQ', 'GLD', 'BTC-USD']);
+    // Get Indian indices (these update less frequently, so we can call directly)
+    const indianIndices = await marketDataService.getIndianIndices();
     
     const overview = {
       indianIndices: indianIndices,
-      globalIndices: globalQuotes.map(quote => ({
-        ticker: quote.symbol,
-        name: quote.symbol === 'SPY' ? 'S&P 500' : 
-              quote.symbol === 'QQQ' ? 'NASDAQ' :
-              quote.symbol === 'GLD' ? 'Gold' : 'Bitcoin',
+      globalIndices: cachedPrices.map(quote => ({
+        ticker: quote.ticker,
+        name: quote.ticker === 'SPY' ? 'S&P 500' : 
+              quote.ticker === 'QQQ' ? 'NASDAQ' :
+              quote.ticker === 'GLD' ? 'Gold' : 'Bitcoin',
         price: quote.price,
         change: `${quote.changePercent > 0 ? '+' : ''}${quote.changePercent.toFixed(2)}%`,
-        trend: quote.changePercent > 0 ? 'up' : 'down'
+        trend: quote.changePercent > 0 ? 'up' : 'down',
+        age_minutes: quote.ageMinutes
       })),
       marketStatus: 'OPEN',
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      cacheStatus: priceCache.getStatus()
     };
 
     res.json(overview);

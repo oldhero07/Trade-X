@@ -340,6 +340,106 @@ class MarketDataService {
       { ticker: 'BHARTIARTL', price: '₹1,589.60', change: '-0.9%', volume: '11.2M' }
     ];
   }
+
+  // Stock search functionality
+  async searchStocks(query) {
+    try {
+      const searchQuery = query.toLowerCase();
+      
+      // Combined database of Indian and US stocks
+      const stockDatabase = [
+        // Indian Stocks (NSE)
+        { symbol: 'RELIANCE', name: 'Reliance Industries Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'TCS', name: 'Tata Consultancy Services Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'INFY', name: 'Infosys Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'HDFCBANK', name: 'HDFC Bank Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'ICICIBANK', name: 'ICICI Bank Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'BHARTIARTL', name: 'Bharti Airtel Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'ITC', name: 'ITC Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'SBIN', name: 'State Bank of India', exchange: 'NSE', currency: '₹' },
+        { symbol: 'LT', name: 'Larsen & Toubro Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'HCLTECH', name: 'HCL Technologies Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'WIPRO', name: 'Wipro Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'MARUTI', name: 'Maruti Suzuki India Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'ASIANPAINT', name: 'Asian Paints Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'NESTLEIND', name: 'Nestle India Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'ULTRACEMCO', name: 'UltraTech Cement Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'KOTAKBANK', name: 'Kotak Mahindra Bank Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'AXISBANK', name: 'Axis Bank Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'BAJFINANCE', name: 'Bajaj Finance Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'TITAN', name: 'Titan Company Ltd', exchange: 'NSE', currency: '₹' },
+        { symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical Industries Ltd', exchange: 'NSE', currency: '₹' },
+        
+        // US Stocks (NASDAQ/NYSE)
+        { symbol: 'AAPL', name: 'Apple Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'GOOGL', name: 'Alphabet Inc Class A', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'AMZN', name: 'Amazon.com Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'TSLA', name: 'Tesla Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'META', name: 'Meta Platforms Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'AMD', name: 'Advanced Micro Devices Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'NFLX', name: 'Netflix Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'CRM', name: 'Salesforce Inc', exchange: 'NYSE', currency: '$' },
+        { symbol: 'ORCL', name: 'Oracle Corporation', exchange: 'NYSE', currency: '$' },
+        { symbol: 'INTC', name: 'Intel Corporation', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'PYPL', name: 'PayPal Holdings Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'ADBE', name: 'Adobe Inc', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'CSCO', name: 'Cisco Systems Inc', exchange: 'NASDAQ', currency: '$' },
+        
+        // ETFs and Indices
+        { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', exchange: 'NYSE', currency: '$' },
+        { symbol: 'QQQ', name: 'Invesco QQQ Trust', exchange: 'NASDAQ', currency: '$' },
+        { symbol: 'GLD', name: 'SPDR Gold Shares', exchange: 'NYSE', currency: '$' },
+        { symbol: 'BTC-USD', name: 'Bitcoin USD', exchange: 'CRYPTO', currency: '$' }
+      ];
+
+      // Filter stocks based on search query
+      const results = stockDatabase.filter(stock => 
+        stock.symbol.toLowerCase().includes(searchQuery) ||
+        stock.name.toLowerCase().includes(searchQuery)
+      ).slice(0, 10); // Limit to 10 results
+
+      // Get current prices for the results
+      const enrichedResults = await Promise.all(
+        results.map(async (stock) => {
+          try {
+            let quote;
+            if (stock.exchange === 'NSE') {
+              quote = await this.getIndianQuote(stock.symbol);
+            } else {
+              quote = await this.getQuote(stock.symbol);
+            }
+            
+            return {
+              symbol: stock.symbol,
+              name: stock.name,
+              exchange: stock.exchange,
+              currency: stock.currency,
+              price: quote.price,
+              change: quote.changePercent,
+              type: stock.exchange === 'CRYPTO' ? 'crypto' : 'stock'
+            };
+          } catch (error) {
+            return {
+              symbol: stock.symbol,
+              name: stock.name,
+              exchange: stock.exchange,
+              currency: stock.currency,
+              price: 0,
+              change: 0,
+              type: stock.exchange === 'CRYPTO' ? 'crypto' : 'stock'
+            };
+          }
+        })
+      );
+
+      return enrichedResults;
+    } catch (error) {
+      console.error('Stock search error:', error);
+      return [];
+    }
+  }
 }
 
 module.exports = new MarketDataService();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Page, Notification } from '../types';
+import api from '../config/api';
 
 interface LayoutProps {
   activePage: Page;
@@ -43,7 +44,7 @@ export const Layout: React.FC<LayoutProps> = ({ activePage, setActivePage, child
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<{label: string, page: Page, type: 'page' | 'asset'}[]>([]);
+  const [searchResults, setSearchResults] = useState<{label: string, page: Page, type: 'page' | 'asset' | 'stock', symbol?: string, price?: number, currency?: string}[]>([]);
   
   // Mock Notifications State
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -76,29 +77,56 @@ export const Layout: React.FC<LayoutProps> = ({ activePage, setActivePage, child
         setSearchResults([]);
         return;
     }
-    const q = searchQuery.toLowerCase();
-    const pages: {label: string, page: Page}[] = [
-        { label: 'Dashboard', page: 'dashboard' },
-        { label: 'Strategy Builder', page: 'strategy-builder' },
-        { label: 'Simulator', page: 'strategy-simulator' },
-        { label: 'Market Analysis', page: 'market-analysis' },
-        { label: 'Portfolio', page: 'portfolio' },
-        { label: 'Watchlist', page: 'watchlist' },
-        { label: 'Settings', page: 'settings' },
-    ];
-    const assets = [
-        { label: 'NVDA - Nvidia', page: 'watchlist' as Page },
-        { label: 'AAPL - Apple', page: 'watchlist' as Page },
-        { label: 'TSLA - Tesla', page: 'watchlist' as Page },
-        { label: 'BTC - Bitcoin', page: 'watchlist' as Page },
-        { label: 'SPY - S&P 500', page: 'watchlist' as Page },
-    ];
-
-    const matchedPages = pages.filter(p => p.label.toLowerCase().includes(q)).map(p => ({...p, type: 'page' as const}));
-    const matchedAssets = assets.filter(a => a.label.toLowerCase().includes(q)).map(a => ({...a, type: 'asset' as const}));
     
-    setSearchResults([...matchedPages, ...matchedAssets]);
+    const searchStocks = async () => {
+      try {
+        const q = searchQuery.toLowerCase();
+        
+        // Search pages first
+        const pages: {label: string, page: Page}[] = [
+            { label: 'Dashboard', page: 'dashboard' },
+            { label: 'Strategy Builder', page: 'strategy-builder' },
+            { label: 'Simulator', page: 'strategy-simulator' },
+            { label: 'Market Analysis', page: 'market-analysis' },
+            { label: 'Portfolio', page: 'portfolio' },
+            { label: 'Watchlist', page: 'watchlist' },
+            { label: 'Settings', page: 'settings' },
+        ];
+        
+        const matchedPages = pages.filter(p => p.label.toLowerCase().includes(q)).map(p => ({...p, type: 'page' as const}));
+        
+        // Search stocks via API
+        const stockResults = await api.searchStocks(searchQuery);
+        const matchedStocks = stockResults.map((stock: any) => ({
+          label: `${stock.symbol} - ${stock.name}`,
+          page: 'watchlist' as Page,
+          type: 'stock' as const,
+          symbol: stock.symbol,
+          price: stock.price,
+          currency: stock.currency
+        }));
+        
+        setSearchResults([...matchedPages, ...matchedStocks]);
+      } catch (error) {
+        console.error('Search error:', error);
+        // Fallback to page search only
+        const q = searchQuery.toLowerCase();
+        const pages: {label: string, page: Page}[] = [
+            { label: 'Dashboard', page: 'dashboard' },
+            { label: 'Strategy Builder', page: 'strategy-builder' },
+            { label: 'Simulator', page: 'strategy-simulator' },
+            { label: 'Market Analysis', page: 'market-analysis' },
+            { label: 'Portfolio', page: 'portfolio' },
+            { label: 'Watchlist', page: 'watchlist' },
+            { label: 'Settings', page: 'settings' },
+        ];
+        const matchedPages = pages.filter(p => p.label.toLowerCase().includes(q)).map(p => ({...p, type: 'page' as const}));
+        setSearchResults(matchedPages);
+      }
+    };
 
+    const timeoutId = setTimeout(searchStocks, 300); // Debounce search
+    return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
   const handleSearchSelect = (page: Page) => {
@@ -162,7 +190,12 @@ export const Layout: React.FC<LayoutProps> = ({ activePage, setActivePage, child
                                 onClick={() => handleSearchSelect(res.page)}
                                 className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center justify-between group transition-colors"
                             >
-                                <span className="text-white font-medium text-sm">{res.label}</span>
+                                <div className="flex flex-col">
+                                  <span className="text-white font-medium text-sm">{res.label}</span>
+                                  {res.type === 'stock' && res.price && (
+                                    <span className="text-xs text-text-secondary">{res.currency}{res.price.toFixed(2)}</span>
+                                  )}
+                                </div>
                                 <span className="text-xs text-text-secondary bg-background-dark px-2 py-1 rounded group-hover:bg-background-dark/80 capitalize">{res.type}</span>
                             </button>
                         ))}

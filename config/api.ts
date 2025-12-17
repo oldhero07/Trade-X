@@ -113,6 +113,53 @@ class ApiClient {
       body: JSON.stringify({ riskTolerance, timeHorizon, initialInvestment }),
     });
   }
+
+  // Search methods
+  async searchStocks(query: string) {
+    return this.request(`/market/search/${encodeURIComponent(query)}`);
+  }
+
+  // Cache methods
+  async getCacheStatus() {
+    return this.request('/market/cache/status');
+  }
+
+  async forceUpdatePrice(ticker: string) {
+    return this.request(`/market/cache/update/${ticker}`, {
+      method: 'POST',
+    });
+  }
+
+  // Watchlist methods
+  async getWatchlists() {
+    return this.request('/watchlist');
+  }
+
+  async createWatchlist(name: string) {
+    return this.request('/watchlist', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  async addToWatchlist(watchlistId: number, ticker: string) {
+    return this.request(`/watchlist/${watchlistId}/stocks`, {
+      method: 'POST',
+      body: JSON.stringify({ ticker }),
+    });
+  }
+
+  async removeFromWatchlist(watchlistId: number, ticker: string) {
+    return this.request(`/watchlist/${watchlistId}/stocks/${ticker}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteWatchlist(watchlistId: number) {
+    return this.request(`/watchlist/${watchlistId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
