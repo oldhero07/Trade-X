@@ -58,36 +58,20 @@ import StrategyBuilderComponent from './src/components/strategy/StrategyBuilder'
 import StrategySimulatorComponent from './src/pages/StrategySimulator';
 import CustomBuilderComponent from './src/pages/CustomBuilder';
 
-const MarketAnalysis = () => (
-  <div className="p-4 lg:p-10 pb-32">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-white mb-4">Market Analysis</h1>
-      <p className="text-text-secondary">Market analysis and insights coming soon.</p>
-    </div>
-  </div>
-);
+// Import new dashboard pages
+import PortfolioTracker from './components/dashboard/PortfolioTracker';
+import MarketAnalysisComponent from './components/dashboard/MarketAnalysis';
+import SettingsComponent from './components/dashboard/Settings';
 
-const Portfolio = () => (
-  <div className="p-4 lg:p-10 pb-32">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-white mb-4">Portfolio</h1>
-      <p className="text-text-secondary">Portfolio tracking coming soon.</p>
-    </div>
-  </div>
-);
+const MarketAnalysis = () => <MarketAnalysisComponent />;
+
+const Portfolio = () => <PortfolioTracker />;
 
 const StrategySimulator = () => {
   return <StrategySimulatorComponent />;
 };
 
-const Settings = () => (
-  <div className="p-4 lg:p-10 pb-32">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-white mb-4">Settings</h1>
-      <p className="text-text-secondary">Settings panel coming soon.</p>
-    </div>
-  </div>
-);
+const Settings = () => <SettingsComponent />;
 
 const StrategyBuilder = ({ setActivePage }: { setActivePage: (p: Page) => void }) => (
   <StrategyBuilderComponent setActivePage={setActivePage} />

@@ -79,10 +79,15 @@ export default function Watchlist() {
     setWatchlists(updatedWatchlists);
   };
 
-  const createWatchlist = async () => {
+  const createWatchlist = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
     try {
       if (!newWatchlistName.trim()) return;
       
+      console.log('Creating watchlist:', newWatchlistName);
       await api.createWatchlist(newWatchlistName);
       setNewWatchlistName('');
       setShowCreateModal(false);
@@ -310,31 +315,38 @@ export default function Watchlist() {
         {showCreateModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowCreateModal(false)}></div>
-            <div className="bg-surface-dark border border-border-dark rounded-2xl p-6 w-full max-w-md relative z-10 shadow-2xl">
+            <div className="bg-surface-dark border border-border-dark rounded-2xl p-6 w-full max-w-md relative z-[101] shadow-2xl">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Create New Watchlist</h2>
-                <button onClick={() => setShowCreateModal(false)} className="text-text-secondary hover:text-white">
+                <button 
+                  onClick={() => setShowCreateModal(false)} 
+                  className="text-text-secondary hover:text-white transition-colors"
+                  type="button"
+                >
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
               
-              <div className="mb-6">
-                <input
-                  type="text"
-                  placeholder="Watchlist name"
-                  value={newWatchlistName}
-                  onChange={(e) => setNewWatchlistName(e.target.value)}
-                  className="w-full px-4 py-3 bg-background-dark border border-border-dark rounded-xl text-white focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-              
-              <button
-                onClick={createWatchlist}
-                disabled={!newWatchlistName.trim()}
-                className="w-full py-3 bg-primary hover:bg-primary-hover text-black font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Create Watchlist
-              </button>
+              <form onSubmit={createWatchlist}>
+                <div className="mb-6">
+                  <input
+                    type="text"
+                    placeholder="Watchlist name"
+                    value={newWatchlistName}
+                    onChange={(e) => setNewWatchlistName(e.target.value)}
+                    className="w-full px-4 py-3 bg-background-dark border border-border-dark rounded-xl text-white focus:outline-none focus:border-primary transition-colors"
+                    autoFocus
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={!newWatchlistName.trim()}
+                  className="w-full py-3 bg-primary hover:bg-primary-hover text-black font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative z-[102]"
+                >
+                  Create Watchlist
+                </button>
+              </form>
             </div>
           </div>
         )}
