@@ -94,15 +94,12 @@ class PriceCache {
 
   async updateSinglePrice(ticker) {
     try {
-      let quote;
-      
-      // Determine if it's an Indian stock
-      const indianStocks = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'BHARTIARTL', 'ITC', 'SBIN', 'LT', 'HCLTECH', 'WIPRO', 'MARUTI', 'ASIANPAINT', 'NESTLEIND', 'ULTRACEMCO', 'KOTAKBANK', 'AXISBANK', 'BAJFINANCE', 'TITAN', 'SUNPHARMA'];
-      
-      if (indianStocks.includes(ticker)) {
-        quote = await marketDataService.getIndianQuote(ticker);
-      } else {
-        quote = await marketDataService.getQuote(ticker);
+      // Use the new unified getQuote function (handles Indian stocks automatically)
+      const quote = await marketDataService.getQuote(ticker);
+
+      // Check if there was an error
+      if (quote.error) {
+        throw new Error(quote.message);
       }
 
       // Update cache in database

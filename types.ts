@@ -1,4 +1,4 @@
-export type Page = 'dashboard' | 'strategy-builder' | 'strategy-simulator' | 'market-analysis' | 'portfolio' | 'watchlist' | 'settings';
+export type Page = 'dashboard' | 'strategy-builder' | 'strategy-simulator' | 'custom-builder' | 'market-analysis' | 'portfolio' | 'watchlist' | 'settings';
 
 export interface Stock {
   symbol: string;

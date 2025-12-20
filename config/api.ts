@@ -87,6 +87,14 @@ class ApiClient {
   }
 
   // Market data methods
+  async getMarketStatus() {
+    return this.request('/market/status');
+  }
+
+  async getQuote(ticker: string) {
+    return this.request(`/market/quote/${ticker}`);
+  }
+
   async getMarketOverview() {
     return this.request('/market/overview');
   }

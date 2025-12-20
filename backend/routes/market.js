@@ -6,6 +6,29 @@ const priceCache = require('../services/priceCache');
 
 const router = express.Router();
 
+// Get market status (Nifty 50 based)
+router.get('/status', async (req, res) => {
+  try {
+    const marketStatus = await marketDataService.getMarketStatus();
+    res.json(marketStatus);
+  } catch (error) {
+    console.error('Market status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get stock quote
+router.get('/quote/:ticker', async (req, res) => {
+  try {
+    const { ticker } = req.params;
+    const quote = await marketDataService.getQuote(ticker);
+    res.json(quote);
+  } catch (error) {
+    console.error('Quote fetch error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get market movers (top gainers/losers)
 router.get('/movers', async (req, res) => {
   try {

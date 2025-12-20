@@ -170,7 +170,14 @@ export const Layout: React.FC<LayoutProps> = ({ activePage, setActivePage, child
   };
 
   const renderHeaderContent = () => {
-      if (['dashboard', 'market-analysis', 'portfolio', 'strategy-builder'].includes(activePage)) {
+      // Hide global search on strategy-builder page to avoid confusion
+      if (activePage === 'strategy-builder') {
+          return (
+              <h2 className="text-xl font-bold text-white">Strategy Builder</h2>
+          );
+      }
+      
+      if (['dashboard', 'market-analysis', 'portfolio'].includes(activePage)) {
           return (
             <div className="relative w-96" ref={searchRef}>
                 <span className="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-[20px]">search</span>

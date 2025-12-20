@@ -52,15 +52,11 @@ const TradeModal = ({ isOpen, onClose, stock }: { isOpen: boolean, onClose: () =
     );
 };
 
-// Simple placeholder components for pages not yet implemented
-const Dashboard = ({ setActivePage }: { setActivePage: (p: Page) => void }) => (
-  <div className="p-4 lg:p-10 pb-32">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-white mb-4">Dashboard</h1>
-      <p className="text-text-secondary">Welcome to Trade-X! Your trading dashboard.</p>
-    </div>
-  </div>
-);
+// Import the new Dashboard component
+import { Dashboard as DashboardComponent } from './components/dashboard';
+import StrategyBuilderComponent from './src/components/strategy/StrategyBuilder';
+import StrategySimulatorComponent from './src/pages/StrategySimulator';
+import CustomBuilderComponent from './src/pages/CustomBuilder';
 
 const MarketAnalysis = () => (
   <div className="p-4 lg:p-10 pb-32">
@@ -80,14 +76,9 @@ const Portfolio = () => (
   </div>
 );
 
-const StrategySimulator = () => (
-  <div className="p-4 lg:p-10 pb-32">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-white mb-4">Strategy Simulator</h1>
-      <p className="text-text-secondary">Strategy simulation coming soon.</p>
-    </div>
-  </div>
-);
+const StrategySimulator = () => {
+  return <StrategySimulatorComponent />;
+};
 
 const Settings = () => (
   <div className="p-4 lg:p-10 pb-32">
@@ -99,12 +90,11 @@ const Settings = () => (
 );
 
 const StrategyBuilder = ({ setActivePage }: { setActivePage: (p: Page) => void }) => (
-  <div className="p-4 lg:p-10 pb-32">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-white mb-4">Strategy Builder</h1>
-      <p className="text-text-secondary">Strategy builder coming soon.</p>
-    </div>
-  </div>
+  <StrategyBuilderComponent setActivePage={setActivePage} />
+);
+
+const CustomBuilder = ({ setActivePage }: { setActivePage: (p: Page) => void }) => (
+  <CustomBuilderComponent setActivePage={setActivePage} />
 );
 
 // --- Main App Component ---
@@ -150,14 +140,15 @@ const App: React.FC = () => {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'dashboard': return <Dashboard setActivePage={setActivePage} />;
+      case 'dashboard': return <DashboardComponent />;
       case 'market-analysis': return <MarketAnalysis />;
       case 'portfolio': return <Portfolio />;
       case 'strategy-simulator': return <StrategySimulator />;
       case 'watchlist': return <WatchlistComponent />;
       case 'settings': return <Settings />;
       case 'strategy-builder': return <StrategyBuilder setActivePage={setActivePage} />;
-      default: return <Dashboard setActivePage={setActivePage} />;
+      case 'custom-builder': return <CustomBuilder setActivePage={setActivePage} />;
+      default: return <DashboardComponent />;
     }
   };
 
